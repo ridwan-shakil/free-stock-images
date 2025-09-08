@@ -5,15 +5,16 @@
  * Plugin URI:  https://example.com/free-stock-images
  * Description: Search and import free stock images (Unsplash, Pixabay, Pexels) directly from the Media modal or Media → Free Stock Images.
  * Version:     0.1.0
- * Author:      Your Name
+ * Author:      MD.Ridwan
  * Text Domain: free-stock-images
  */
+
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-define('FSI_VERSION', '0.1.0');
+
 define('FSI_PLUGIN_FILE', __FILE__);
 define('FSI_PLUGIN_DIR', plugin_dir_url(__FILE__));
 

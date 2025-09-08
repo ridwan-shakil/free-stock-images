@@ -2,11 +2,22 @@
 
 namespace FreeStockImages\Core;
 
+use FreeStockImages\Admin\SettingsPage;
+
 if (! defined('ABSPATH')) {
     exit;
 }
 
+/*
+ * Main plugin class (singleton)
+ */
 class Plugin {
+    /**
+     * Settings page instance
+     * @var SettingsPage
+     */
+    private $settings_page;
+
     /**
      * @var Plugin|null
      */
@@ -65,6 +76,12 @@ class Plugin {
             'fsi-settings',
             [$this, 'render_settings_page']
         );
+        /**
+         * Initialize settings page
+         */
+        $this->settings_page = new SettingsPage();
+        // Note: settings fields are registered in SettingsPage constructor
+
 
         // Media -> Free Stock Images (submenu)
         add_submenu_page(
@@ -99,21 +116,12 @@ class Plugin {
     }
 
     /**
-     * Settings page (placeholder for Phase 1)
+     * Render settings page (callback for add_options_page)
      */
     public function render_settings_page() {
-        if (! current_user_can('manage_options')) {
-            return;
-        }
-?>
-<div class="wrap">
-    <h1><?php esc_html_e('Free Stock Images — Settings (placeholder)', 'free-stock-images'); ?></h1>
-    <p>
-        This is Phase 1 placeholder. Settings UI will appear here in Phase 2.
-    </p>
-</div>
-<?php
+        $this->settings_page->render_page();
     }
+
 
     /**
      * Media page (submenu) — placeholder content for Phase 1
@@ -122,7 +130,7 @@ class Plugin {
         if (! current_user_can('upload_files')) {
             return;
         }
-    ?>
+?>
 <div class="wrap">
     <h1><?php esc_html_e('Free Stock Images — Media Page (placeholder)', 'free-stock-images'); ?></h1>
     <div id="fsi-app">

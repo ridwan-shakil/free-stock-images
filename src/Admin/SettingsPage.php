@@ -91,9 +91,12 @@ class SettingsPage {
 
         $value = get_option($option_name, '');
 ?>
-        <input type="text" name="<?php echo esc_attr($option_name); ?>" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-        <a href="<?php echo esc_url($get_key_url); ?>" target="_blank" style="margin-left:10px;"><?php esc_html_e('→ Get API key', 'free-stock-images'); ?></a>
-        <p class="description"><?php esc_html_e('Leave empty to use the plugin\'s default demo key.', 'free-stock-images'); ?></p>
+        <input type="text" name="<?php echo esc_attr($option_name); ?>" value="<?php echo esc_attr($value); ?>"
+            class="regular-text" />
+        <a href="<?php echo esc_url($get_key_url); ?>" target="_blank"
+            style="margin-left:10px;"><?php esc_html_e('→ Get API key', 'free-stock-images'); ?></a>
+        <p class="description"><?php esc_html_e('Leave empty to use the plugin\'s default demo key.', 'free-stock-images'); ?>
+        </p>
     <?php
     }
 

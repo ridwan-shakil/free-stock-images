@@ -13,6 +13,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+define('FSI_VERSION', '0.1.0');
 define('FSI_PLUGIN_FILE', __FILE__);
 define('FSI_PLUGIN_DIR', plugin_dir_url(__FILE__));
 

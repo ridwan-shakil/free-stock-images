@@ -1,0 +1,18 @@
+/* Minimal placeholder styles for Phase 1 */
+#fsi-app {
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #eee;
+}
+
+.fsi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.fsi-item {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: center;
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ridwan/free-stock-images",
+  "description": "Search and import free stock images (Unsplash, Pixabay, Pexels) directly in WordPress Media Library.",
+  "type": "wordpress-plugin",
+  "version": "0.1.0",
+  "autoload": {
+    "psr-4": {
+      "FreeStockImages\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Ridwan",
+      "email": "ridwansweb@gmail.com"
+    }
+  ],
+  "require": {}
+}

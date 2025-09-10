@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
 
 class Pixabay implements ProviderInterface {
 
-    private $demo_key = 'YOUR_PIXABAY_DEMO_KEY_HERE';
+    private $demo_key = '52201740-f9a6eab0da31331dc8be46c99';
 
     public function search_images(string $query, array $filters = [], int $page = 1, int $perPage = 20): array {
         $api_key = $this->get_api_key();

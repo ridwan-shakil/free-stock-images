@@ -1,5 +1,12 @@
-/* global fsi_ajax, wp */
+/*  global fsi_ajax, wp 
+*	Handles UI interactions (source buttons, filters, search, infinite scroll)
+*	AJAX calls to fsi_search & fsi_import
+*	Renders results in grid
+*	Click image → auto import(by importer.php)
+*/
 jQuery(function ($) {
+
+
     const perPage = fsi_ajax.per_page || 20;
     const ajaxUrl = fsi_ajax.ajax_url;
     const nonce = fsi_ajax.nonce;
@@ -246,6 +253,26 @@ jQuery(function ($) {
 
     }
 
+    // Expose a mount function for other contexts (media modal, standalone page)
+    window.fsi_mount = function ($container) {
+        if (!$container || !$container.length) return null;
+
+        // if UI already mounted into this container, return existing root
+        if ($container.find('.fsi-root').length) {
+            return $container.find('.fsi-root');
+        }
+
+        // Create UI and attach
+        const ui = createRootUI();
+        // If the container is the special .fsi-ui-root inside a wrapper, use append
+        $container.append(ui);
+
+        attachEventHandlers(ui);
+
+        return ui;
+    };
+
+
     // Simple HTML escaper for attribute interpolation
     function escapeHtml(str) {
         if (!str) return '';
@@ -313,4 +340,39 @@ jQuery(function ($) {
             $('.insert-media').trigger('click');
         }
     }, 600);
+
+
+
+    // === Safely extend wp.media to add our tab, result: "edit page> add imge> media popup> OUR TAB" ===
+    if (typeof wp !== 'undefined' && wp.media && wp.media.view) {
+        const OrigMediaFramePost = wp.media.view.MediaFrame.Post;
+
+        wp.media.view.MediaFrame.Post = OrigMediaFramePost.extend({
+            browseRouter: function (routerView) {
+                OrigMediaFramePost.prototype.browseRouter.apply(this, arguments);
+                routerView.set({
+                    fsi: {
+                        text: 'Free Stock Images',
+                        priority: 60
+                    }
+                });
+            },
+            bindHandlers: function () {
+                OrigMediaFramePost.prototype.bindHandlers.apply(this, arguments);
+                this.on('content:create:fsi', this.createFsiContent, this);
+            },
+            createFsiContent: function (contentRegion) {
+                const $el = $('<div class="fsi-tab"><div class="fsi-ui-root"></div></div>');
+                contentRegion.view = new wp.Backbone.View({ el: $el[0] });
+                contentRegion.$el.append($el);
+
+                const $root = $el.find('.fsi-ui-root');
+                if (window.fsi_mount) {
+                    window.fsi_mount($root);
+                }
+            }
+        });
+    }
+
+
 });

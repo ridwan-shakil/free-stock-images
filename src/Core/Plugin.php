@@ -3,6 +3,8 @@
 namespace FreeStockImages\Core;
 
 use FreeStockImages\Admin\SettingsPage;
+use FreeStockImages\Admin\MediaTab;
+use FreeStockImages\Admin\MediaPage;
 use FreeStockImages\API\Unsplash;
 use FreeStockImages\API\Pixabay;
 use FreeStockImages\API\Pexels;
@@ -22,6 +24,10 @@ final class Plugin {
 
     /** @var SettingsPage */
     private $settings_page;
+
+    /** @var MediaPage */
+    private $media_tab;
+    private $media_page;
 
     /**
      * Get singleton instance
@@ -47,6 +53,9 @@ final class Plugin {
     public function init() {
         // Settings page object
         $this->settings_page = new SettingsPage();
+        // Media tab + page
+        $this->media_tab = new MediaTab();
+        $this->media_page = new MediaPage();
 
         // Menus
         add_action('admin_menu', [$this, 'register_menus']);
@@ -125,17 +134,12 @@ final class Plugin {
         if (! current_user_can('upload_files')) {
             return;
         }
-?>
-        <div class="wrap">
-            <h1><?php //esc_html_e('Free Stock Images', 'free-stock-images'); 
-                ?></h1>
-            <div id="fsi-standalone-app" class="fsi-standalone">
-                <!-- modal.js will render UI here (same structure used for modal tab) -->
-                <div class="fsi-ui-root"></div>
-            </div>
-        </div>
-<?php
+        $this->media_page->render_page();
     }
+
+
+
+
 
     /**
      * AJAX handler: search provider

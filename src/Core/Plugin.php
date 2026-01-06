@@ -3,31 +3,31 @@
 namespace FreeStockImages\Core;
 
 use FreeStockImages\Admin\SettingsPage;
+use FreeStockImages\Admin\MediaTab;
+use FreeStockImages\Admin\MediaPage;
+use FreeStockImages\API\Unsplash;
+use FreeStockImages\API\Pixabay;
+use FreeStockImages\API\Pexels;
+use FreeStockImages\Services\Importer;
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-/*
- * Main plugin class (singleton)
- */
-class Plugin {
-    /**
-     * Settings page instance
-     * @var SettingsPage
-     */
-    private $settings_page;
-
+final class Plugin {
     /**
      * @var Plugin|null
      */
     private static $instance = null;
 
-    /**
-     * Plugin version
-     * @var string
-     */
-    private $version = '0.1.0';
+    const VERSION = '0.2.0';
+
+    /** @var SettingsPage */
+    private $settings_page;
+
+    /** @var MediaPage */
+    private $media_tab;
+    private $media_page;
 
     /**
      * Get singleton instance
@@ -41,31 +41,35 @@ class Plugin {
     }
 
     /**
-     * Private constructor (singleton)
+     * Private constructor
      */
     private function __construct() {
-        // reserved for future use
+        // reserved
     }
 
     /**
-     * Initialize hooks — called from bootstrap
+     * Initialize plugin
      */
     public function init() {
-        // Admin menu + media submenu
+        // Settings page object
+        $this->settings_page = new SettingsPage();
+        // Media tab + page
+        $this->media_tab = new MediaTab();
+        $this->media_page = new MediaPage();
+
+        // Menus
         add_action('admin_menu', [$this, 'register_menus']);
 
-        // Enqueue admin assets (modal, settings page, media page)
+        // Assets
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
 
-        // AJAX endpoints (placeholders for now)
+        // AJAX endpoints for authenticated users (admin)
         add_action('wp_ajax_fsi_search', [$this, 'ajax_search']);
         add_action('wp_ajax_fsi_import', [$this, 'ajax_import']);
-
-        // TODO: load textdomain, other early init tasks
     }
 
     /**
-     * Register settings menu and submenu under Media
+     * Register Settings and Media submenu
      */
     public function register_menus() {
         // Settings -> Free Stock Images
@@ -76,14 +80,8 @@ class Plugin {
             'fsi-settings',
             [$this, 'render_settings_page']
         );
-        /**
-         * Initialize settings page
-         */
-        $this->settings_page = new SettingsPage();
-        // Note: settings fields are registered in SettingsPage constructor
 
-
-        // Media -> Free Stock Images (submenu)
+        // Media -> Free Stock Images
         add_submenu_page(
             'upload.php',
             esc_html__('Free Stock Images', 'free-stock-images'),
@@ -95,79 +93,134 @@ class Plugin {
     }
 
     /**
-     * Enqueue admin CSS/JS
-     *
-     * For Phase 1 we enqueue placeholders so you can confirm assets load.
+     * Enqueue admin assets (modal + media page)
      */
     public function enqueue_admin_assets($hook_suffix) {
-        // You can later restrict by $hook_suffix for performance.
-        wp_enqueue_style('fsi-admin-style', FSI_PLUGIN_DIR . 'assets/css/styles.css', [], $this->version);
-        wp_enqueue_script('fsi-modal', FSI_PLUGIN_DIR . 'assets/js/modal.js', ['jquery'], $this->version, true);
+        // Always enqueue on admin pages where media modal may appear, but you could restrict.
+        wp_enqueue_style('fsi-admin-style', FSI_PLUGIN_DIR . 'assets/css/styles.css', [], self::VERSION);
+        wp_enqueue_script('fsi-modal', FSI_PLUGIN_DIR . 'assets/js/modal.js', ['jquery'], self::VERSION, true);
 
-        // Provide AJAX URL and nonce to JS
+        // Localize data for JS
         wp_localize_script(
             'fsi-modal',
             'fsi_ajax',
             [
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('fsi_nonce'),
+                'ajax_url'  =>  admin_url('admin-ajax.php'),
+                'nonce'     => wp_create_nonce('fsi_nonce'),
+                'per_page'  => 20,
+                'sources'   => [
+                    'pixabay'   => 'pixabay',
+                    'pexels'    => 'pexels',
+                    'unsplash'  => 'unsplash'
+                ]
             ]
         );
     }
 
     /**
-     * Render settings page (callback for add_options_page)
+     * Render settings page by delegating to SettingsPage (admin > settings > free stock images)
      */
     public function render_settings_page() {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
         $this->settings_page->render_page();
     }
 
-
     /**
-     * Media page (submenu) — placeholder content for Phase 1
+     * Render the standalone media page (admin > media > Fre stock images)
      */
     public function render_media_page() {
         if (! current_user_can('upload_files')) {
             return;
         }
-?>
-<div class="wrap">
-    <h1><?php esc_html_e('Free Stock Images — Media Page (placeholder)', 'free-stock-images'); ?></h1>
-    <div id="fsi-app">
-        <p><?php esc_html_e('UI will be rendered here (same as the media modal tab).', 'free-stock-images'); ?></p>
-    </div>
-</div>
-<?php
+        $this->media_page->render_page();
     }
 
+
+
+
+
     /**
-     * AJAX handler: search (placeholder)
+     * AJAX handler: search provider
      */
     public function ajax_search() {
-        // Basic security check
         check_ajax_referer('fsi_nonce');
 
-        $query = isset($_POST['query']) ? sanitize_text_field(wp_unslash($_POST['query'])) : '';
+        if (! current_user_can('upload_files')) {
+            wp_send_json_error(['message' => 'unauthorized'], 403);
+        }
 
-        // For Phase 1, just return a small dummy payload so JS can confirm AJAX works.
-        wp_send_json_success([
-            'message' => 'Search endpoint working (Phase 1 placeholder)',
-            'query'   => $query,
-        ]);
+        $query   = isset($_POST['query']) ? sanitize_text_field(wp_unslash($_POST['query'])) : '';
+        $source  = isset($_POST['source']) ? sanitize_key(wp_unslash($_POST['source'])) : 'unsplash';
+        $page    = isset($_POST['page']) ? absint($_POST['page']) : 1;
+        $perPage = isset($_POST['per_page']) ? absint($_POST['per_page']) : 20;
+
+        if (empty($query)) {
+            wp_send_json_success(['images' => [], 'page' => $page]);
+        }
+
+        try {
+            $provider = $this->get_provider_instance($source);
+            if (! $provider) {
+                wp_send_json_error(['message' => 'invalid_source'], 400);
+            }
+
+            $filters = []; // extend later for orientation, color, etc.
+
+            $images = $provider->search_images($query, $filters, $page, $perPage);
+
+            wp_send_json_success(['images' => $images, 'page' => $page]);
+        } catch (\Throwable $e) {
+            wp_send_json_error(['message' => 'provider_error', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
-     * AJAX handler: import (placeholder)
+     * AJAX handler: import image by URL (click-to-import)
      */
     public function ajax_import() {
         check_ajax_referer('fsi_nonce');
 
-        $url = isset($_POST['url']) ? esc_url_raw(wp_unslash($_POST['url'])) : '';
+        if (! current_user_can('upload_files')) {
+            wp_send_json_error(['message' => 'unauthorized'], 403);
+        }
 
-        // Phase 1: return placeholder response
-        wp_send_json_success([
-            'message' => 'Import endpoint working (Phase 1 placeholder)',
-            'url'     => $url,
-        ]);
+        $image_url   = isset($_POST['image_url']) ? esc_url_raw(wp_unslash($_POST['image_url'])) : '';
+        $title       = isset($_POST['title']) ? sanitize_text_field(wp_unslash($_POST['title'])) : '';
+        $attribution = isset($_POST['attribution']) ? sanitize_text_field(wp_unslash($_POST['attribution'])) : '';
+
+        if (empty($image_url)) {
+            wp_send_json_error(['message' => 'missing_image_url'], 400);
+        }
+
+        $importer = new Importer();
+
+        $result = $importer->import_from_url($image_url, $title, $attribution);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => 'import_failed', 'error' => $result->get_error_message()], 500);
+        }
+
+        // Success: $result is attachment ID
+        wp_send_json_success(['attachment_id' => $result]);
+    }
+
+    /**
+     * Map source name to provider instance
+     *
+     * @param string $source
+     * @return \FreeStockImages\API\ProviderInterface|null
+     */
+    protected function get_provider_instance(string $source) {
+        switch ($source) {
+            case 'unsplash':
+                return new Unsplash();
+            case 'pexels':
+                return new Pexels();
+            case 'pixabay':
+            default:
+                return new Pixabay();
+        }
     }
 }

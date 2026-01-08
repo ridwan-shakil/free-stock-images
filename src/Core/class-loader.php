@@ -3,18 +3,32 @@
 
 namespace FreeStockImages\Core;
 
+use FreeStockImages\Assets;
+use FreeStockImages\Free_stock_image_Ajax;
+use FreeStockImages\Admin\SettingsPage;
+use FreeStockImages\Admin\MediaTab;
+use FreeStockImages\Admin\MediaPage;
+
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 
 /**
- * The main entry point and loader class for the Free Stock Images plugin.
- *
- * This class instantiates and manages the core functional classes
+ * Loader class lods all the core component classes.
  * responsible for :.
  */
 class Loader {
+
+
+    /** @var SettingsPage */
+    private $settings_page;
+
+    /** @var MediaPage */
+    private $media_tab;
+    private $media_page;
+
 
 	/**
 	 * Holds the Admin_Notes_Activation instance.
@@ -51,26 +65,65 @@ class Loader {
 	 * * @return void
 	 */
 	public function __construct() {
-		// $this->activation = new Admin_Notes_Activation();
-		// $this->cpt        = new Admin_Notes_CPT();
-		// $this->admin      = new Admin_Notes_Admin();
-		// $this->assets     = new Admin_Notes_Assets();
-		// $this->ajax       = new Admin_Notes_Ajax();
+
+		 // Settings page object
+        $this->settings_page = new SettingsPage();
+        // Media tab + page
+        $this->media_tab = new MediaTab();
+        $this->media_page = new MediaPage();
+		$this->ajax = new Free_stock_image_Ajax();
+		$this->ajax->init();
+		$this->assets = new Assets();
+		$this->assets->init();
+
+		add_action ('admin_menu', [ $this, 'register_menus' ]);
 	}
 
 
-	/**
-	 * Executes the core initialization routine for the plugin.
-	 *
-	 * This method calls the primary setup/init methods on each
-	 * instantiated component class to register hooks and functionality.
-	 * * @return void
-	 */
-	public function run() {
-		// $this->activation->init();
-		// $this->cpt->register(); // Changed from init() to register() for clarity.
-		// $this->admin->init();
-		// $this->assets->init();
-		// $this->ajax->init();
-	}
+	 /**
+     * Register Settings and Media submenu
+     */
+    public function register_menus() {
+        // Settings -> Free Stock Images
+        add_options_page(
+            esc_html__('Free Stock Images', 'free-stock-images'),
+            esc_html__('Free Stock Images', 'free-stock-images'),
+            'manage_options',
+            'fsi-settings',
+            [$this, 'render_settings_page']
+        );
+
+        // Media -> Free Stock Images
+        add_submenu_page(
+            'upload.php',
+            esc_html__('Free Stock Images', 'free-stock-images'),
+            esc_html__('Free Stock Images', 'free-stock-images'),
+            'upload_files',
+            'fsi-media-page',
+            [$this, 'render_media_page']
+        );
+    }
+
+
+    /**
+     * Render settings page by delegating to SettingsPage (admin > settings > free stock images)
+     */
+    public function render_settings_page() {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+        $this->settings_page->render_page();
+    }
+
+    /**
+     * Render the standalone media page (admin > media > Fre stock images)
+     */
+    public function render_media_page() {
+        if (! current_user_can('upload_files')) {
+            return;
+        }
+        $this->media_page->render_page();
+    }
+
+
 }

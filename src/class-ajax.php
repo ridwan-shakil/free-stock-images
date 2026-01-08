@@ -3,7 +3,12 @@
  * This page is responsible for ajax handaling
  */
 
-namespace FreeStockImages\Core;
+namespace FreeStockImages;
+
+use FreeStockImages\API\Unsplash;
+use FreeStockImages\API\Pixabay;
+use FreeStockImages\API\Pexels;
+use FreeStockImages\Services\Importer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -89,5 +94,22 @@ class Free_stock_image_Ajax {
     }
 
 
+	    /**
+     * Map source name to provider instance
+     *
+     * @param string $source
+     * @return \FreeStockImages\API\ProviderInterface|null
+     */
+    protected function get_provider_instance(string $source) {
+        switch ($source) {
+            case 'unsplash':
+                return new Unsplash();
+            case 'pexels':
+                return new Pexels();
+            case 'pixabay':
+            default:
+                return new Pixabay();
+        }
+    }
 
 }

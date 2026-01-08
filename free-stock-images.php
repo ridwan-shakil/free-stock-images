@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define constants.
+define( 'FSI_PLUGIN_VERSION', '1.0.0' );
 define( 'FSI_PLUGIN_FILE', __FILE__ );
 define( 'FSI_PLUGIN_DIR', plugin_dir_url( __FILE__ ) );
 
@@ -51,7 +52,7 @@ add_action(
 	'plugins_loaded',
 	function () {
 		if ( class_exists( '\FreeStockImages\Core\Plugin' ) ) {
-			\FreeStockImages\Core\Plugin::get_instance()->init();
+			\FreeStockImages\Core\Plugin::get_instance();
 		}
 	}
 );

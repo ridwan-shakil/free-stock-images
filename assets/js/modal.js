@@ -332,7 +332,7 @@ jQuery(function ($) {
         }, 800);
     });
 
-    // If modal already open when script loads, attempt to inject
+     // If modal already open when script loads, attempt to inject
     setTimeout(function () {
         const $router = $('.media-frame-router');
         if ($router.length && !$router.find('.fsi-router-tab').length) {
@@ -341,9 +341,7 @@ jQuery(function ($) {
         }
     }, 600);
 
-
-
-    // === Safely extend wp.media to add our tab, result: "edit page> add imge> media popup> OUR TAB" ===
+    // === NEW CODE: Safely extend wp.media to add our tab ===
     if (typeof wp !== 'undefined' && wp.media && wp.media.view) {
         const OrigMediaFramePost = wp.media.view.MediaFrame.Post;
 
@@ -373,6 +371,4 @@ jQuery(function ($) {
             }
         });
     }
-
-
 });

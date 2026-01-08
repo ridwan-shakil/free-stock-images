@@ -55,28 +55,3 @@ add_action(
 		}
 	}
 );
-
-
-
-
-
-// =====================  test code ===================
-
-// // add the tab
-// add_filter('media_upload_tabs', 'my_upload_tab');
-// function my_upload_tab($tabs) {
-// $tabs['mytabname'] = "My Tab Name";
-// return $tabs;
-// }
-
-// // call the new tab with wp_iframe
-// add_action('media_upload_mytabname', 'add_my_new_form');
-// function add_my_new_form() {
-// wp_iframe('my_new_form');
-// }
-
-// // the tab content
-// function my_new_form() {
-// echo media_upload_header(); // This function is used for print media uploader headers etc.
-// echo '<p>Example HTML content goes here.</p>';
-// }

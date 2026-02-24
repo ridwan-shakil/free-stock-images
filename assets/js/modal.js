@@ -8,6 +8,16 @@ jQuery(function ($) {
 	const importAction = config.importAction || 'fsi_import';
 	const i18n = config.i18n || {};
 	const sources = config.sources || {};
+	const debugEnabled = !!config.debug;
+
+	function debugLog() {
+		if (!debugEnabled || typeof console === 'undefined' || !console.log) {
+			return;
+		}
+		const args = Array.prototype.slice.call(arguments);
+		args.unshift('[FSI]');
+		console.log.apply(console, args);
+	}
 
 	function t(key, fallback) {
 		return i18n[key] || fallback;
@@ -20,6 +30,39 @@ jQuery(function ($) {
 			.replace(/'/g, '&#39;')
 			.replace(/</g, '&lt;')
 			.replace(/>/g, '&gt;');
+	}
+
+	function resolveMediaRuntime() {
+		const candidates = [window];
+		try {
+			if (window.top && window.top !== window) {
+				candidates.unshift(window.top);
+			}
+		} catch (e) {
+			debugLog('Cannot access window.top', e);
+		}
+
+		for (let i = 0; i < candidates.length; i++) {
+			const candidate = candidates[i];
+			if (candidate.wp && candidate.wp.media && candidate.jQuery) {
+				const runtimeType = candidate === window ? 'window' : 'top';
+				debugLog('Using media runtime from', runtimeType);
+				return {
+					win: candidate,
+					$: candidate.jQuery,
+					media: candidate.wp.media,
+					backbone: candidate.wp.Backbone || null
+				};
+			}
+		}
+
+		debugLog('No media runtime detected in window/top');
+		return {
+			win: window,
+			$: $,
+			media: (window.wp && window.wp.media) ? window.wp.media : null,
+			backbone: (window.wp && window.wp.Backbone) ? window.wp.Backbone : null
+		};
 	}
 
 	function ApiClient() {}
@@ -136,14 +179,14 @@ jQuery(function ($) {
 		$ui.find('.fsi-notice').hide().text('');
 	}
 
-	function autoInsertIntoFrame(frame, attachmentId) {
-		if (!frame || typeof wp === 'undefined' || !wp.media || !wp.media.attachment) {
+	function autoInsertIntoFrame(frame, attachmentId, mediaApi) {
+		if (!frame || !mediaApi || !mediaApi.attachment) {
 			return;
 		}
 
-		const attachment = wp.media.attachment(attachmentId);
+		const attachment = mediaApi.attachment(attachmentId);
 		attachment.fetch().done(function () {
-			const state = frame.state();
+			const state = frame.state ? frame.state() : null;
 			if (!state || !state.get) {
 				return;
 			}
@@ -157,7 +200,9 @@ jQuery(function ($) {
 			try {
 				state.trigger('insert', selection);
 			} catch (e) {
-				frame.close();
+				if (frame.close) {
+					frame.close();
+				}
 			}
 		});
 	}
@@ -165,8 +210,9 @@ jQuery(function ($) {
 	function attachUIHandlers($ui, options) {
 		const api = new ApiClient();
 		const store = new FsiStore();
-		const frame = options && options.frame ? options.frame : null;
 		const autoInsert = !!(options && options.autoInsert);
+		const frameResolver = options && typeof options.frameResolver === 'function' ? options.frameResolver : function () { return null; };
+		const mediaApi = options && options.mediaApi ? options.mediaApi : null;
 
 		const $results = $ui.find('.fsi-results');
 		const $loader = $ui.find('.fsi-loader');
@@ -279,8 +325,8 @@ jQuery(function ($) {
 				}
 
 				$item.removeClass('is-loading').addClass('is-done');
-				if (autoInsert && frame && res.data && res.data.attachment_id) {
-					autoInsertIntoFrame(frame, res.data.attachment_id);
+				if (autoInsert && res.data && res.data.attachment_id) {
+					autoInsertIntoFrame(frameResolver(), res.data.attachment_id, mediaApi);
 					showNotice($ui, t('inserted', 'Inserted'), 'success');
 				} else {
 					showNotice($ui, t('imported', 'Imported'), 'success');
@@ -306,8 +352,8 @@ jQuery(function ($) {
 		attachUIHandlers($ui, { autoInsert: false });
 	}
 
-	function patchMediaFrame(FrameClass) {
-		if (!FrameClass || FrameClass.prototype.fsiEnhanced) {
+	function patchMediaFrame(FrameClass, runtime) {
+		if (!FrameClass || FrameClass.prototype.fsiEnhanced || !runtime.backbone) {
 			return;
 		}
 
@@ -331,7 +377,7 @@ jQuery(function ($) {
 				this.on('content:create:fsi', this.createFsiContent, this);
 			},
 			createFsiContent: function (region) {
-				const view = new wp.Backbone.View();
+				const view = new runtime.backbone.View();
 				view.setElement($('<div class="fsi-tab"><div class="fsi-ui-root"></div></div>'));
 				region.view = view;
 
@@ -340,26 +386,120 @@ jQuery(function ($) {
 					$root.data('fsiMounted', true);
 					const $ui = createRootUI();
 					$root.append($ui);
-					attachUIHandlers($ui, { autoInsert: true, frame: this });
+					attachUIHandlers($ui, {
+						autoInsert: true,
+						mediaApi: runtime.media,
+						frameResolver: function () { return runtime.media.frame || null; }
+					});
 				}
 			}
 		});
 	}
 
-	function integrateMediaFrame() {
-		if (typeof wp === 'undefined' || !wp.media || !wp.media.view || !wp.media.view.MediaFrame) {
-			return;
+	function integrateMediaFrame(runtime) {
+		if (!runtime.media || !runtime.media.view || !runtime.media.view.MediaFrame) {
+			debugLog('wp.media frame is not available on this screen');
+			return false;
 		}
 
-		const MediaFrame = wp.media.view.MediaFrame;
+		const MediaFrame = runtime.media.view.MediaFrame;
+		let patched = false;
 		if (MediaFrame.Post) {
-			MediaFrame.Post = patchMediaFrame(MediaFrame.Post) || MediaFrame.Post;
+			debugLog('Patching MediaFrame.Post');
+			MediaFrame.Post = patchMediaFrame(MediaFrame.Post, runtime) || MediaFrame.Post;
+			patched = true;
 		}
 		if (MediaFrame.Select) {
-			MediaFrame.Select = patchMediaFrame(MediaFrame.Select) || MediaFrame.Select;
+			debugLog('Patching MediaFrame.Select');
+			MediaFrame.Select = patchMediaFrame(MediaFrame.Select, runtime) || MediaFrame.Select;
+			patched = true;
 		}
+		return patched;
 	}
 
+	function setupDomFallback(runtime) {
+		const $runtime = runtime.$;
+		const runtimeDoc = runtime.win.document;
+		const fallbackClass = 'fsi-router-tab';
+		const fallbackPanelClass = 'fsi-tab-panel';
+
+		function mountFallbackPanel($panel) {
+			const $root = $panel.find('.fsi-ui-root');
+			if ($root.data('fsiMounted')) {
+				return;
+			}
+			$root.data('fsiMounted', true);
+			const $ui = createRootUI();
+			$root.append($ui);
+			attachUIHandlers($ui, {
+				autoInsert: true,
+				mediaApi: runtime.media,
+				frameResolver: function () {
+					return runtime.media && runtime.media.frame ? runtime.media.frame : null;
+				}
+			});
+		}
+
+		function ensureFallbackTab() {
+			const $router = $runtime('.media-frame-router');
+			const $content = $runtime('.media-frame-content');
+			if (!$router.length || !$content.length) {
+				return;
+			}
+
+			if (!$router.find('.' + fallbackClass).length) {
+				$router.append(
+					'<a href="#" class="media-menu-item ' + fallbackClass + '" data-content="fsi">' +
+					escapeHtml(t('title', 'Free Stock Images')) +
+					'</a>'
+				);
+				debugLog('DOM fallback tab injected');
+			}
+
+			let $panel = $content.find('.' + fallbackPanelClass);
+			if (!$panel.length) {
+				$panel = $runtime('<div class="' + fallbackPanelClass + '" style="display:none;"><div class="fsi-ui-root"></div></div>');
+				$content.append($panel);
+				debugLog('DOM fallback panel injected');
+			}
+			mountFallbackPanel($panel);
+		}
+
+		$runtime(runtimeDoc).off('click.fsiRouterTab').on('click.fsiRouterTab', '.' + fallbackClass, function (event) {
+			event.preventDefault();
+			const $content = $runtime('.media-frame-content');
+			const $panel = $content.find('.' + fallbackPanelClass);
+
+			$runtime('.media-frame-router .media-menu-item, .media-frame-router .media-router a').removeClass('active');
+			$runtime(this).addClass('active');
+
+			$content.children().hide();
+			$panel.show();
+			mountFallbackPanel($panel);
+		});
+
+		ensureFallbackTab();
+
+		if (runtime.win.MutationObserver) {
+			const observer = new runtime.win.MutationObserver(function () {
+				ensureFallbackTab();
+			});
+			observer.observe(runtimeDoc.body, { childList: true, subtree: true });
+		}
+
+		runtime.win.setTimeout(ensureFallbackTab, 300);
+		runtime.win.setTimeout(ensureFallbackTab, 1000);
+	}
+
+	if (!ajaxUrl || !nonce) {
+		if (typeof console !== 'undefined' && console.warn) {
+			console.warn('[FSI] Missing critical localized config: ajaxUrl or nonce');
+		}
+		return;
+	}
+
+	const runtime = resolveMediaRuntime();
 	mountStandalone();
-	integrateMediaFrame();
+	integrateMediaFrame(runtime);
+	setupDomFallback(runtime);
 });

@@ -9,8 +9,8 @@ if (!defined( 'ABSPATH' ) ) {
 /**
  * MediaTab
  *
- * Responsible for injecting the media modal template (Underscore template)
- * and ensuring modal assets are available when the WordPress media modal is used.
+ * Legacy class kept for backward compatibility.
+ * Modal integration is currently handled by Core\Plugin + assets/js/modal.js.
  */
 class MediaTab {
 

@@ -65,9 +65,24 @@ final class Plugin {
 
 		add_action( 'admin_menu', array( $this, 'register_menus' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+		$this->register_elementor_enqueue_hooks();
 
 		add_action( 'wp_ajax_' . self::AJAX_SEARCH, array( $this, 'ajax_search' ) );
 		add_action( 'wp_ajax_' . self::AJAX_IMPORT, array( $this, 'ajax_import' ) );
+	}
+
+	/**
+	 * Register Elementor script enqueue hooks when Elementor is active.
+	 *
+	 * @return void
+	 */
+	private function register_elementor_enqueue_hooks() {
+		if ( ! did_action( 'elementor/loaded' ) && ! class_exists( '\Elementor\Plugin' ) ) {
+			return;
+		}
+
+		add_action( 'elementor/editor/before_enqueue_scripts', array( $this, 'enqueue_elementor_assets' ) );
+		add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_elementor_assets' ) );
 	}
 
 	/**
@@ -103,6 +118,24 @@ final class Plugin {
 			return;
 		}
 
+		$this->enqueue_shared_assets();
+	}
+
+	/**
+	 * Enqueue scripts/styles for Elementor editor and preview.
+	 *
+	 * @return void
+	 */
+	public function enqueue_elementor_assets() {
+		$this->enqueue_shared_assets();
+	}
+
+	/**
+	 * Shared asset registration/localization for all supported admin contexts.
+	 *
+	 * @return void
+	 */
+	private function enqueue_shared_assets() {
 		wp_enqueue_media();
 
 		wp_enqueue_style(
@@ -123,27 +156,37 @@ final class Plugin {
 		wp_localize_script(
 			'fsi-modal',
 			'fsi_ajax',
-			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( self::NONCE_ACTION ),
-				'searchAction' => self::AJAX_SEARCH,
-				'importAction' => self::AJAX_IMPORT,
-				'perPage'      => 20,
-				'canUpload'    => current_user_can( self::CAP_UPLOAD_FILES ),
-				'sources'      => $this->get_source_config(),
-				'i18n'         => array(
-					'title'             => __( 'Free Stock Images', 'free-stock-images' ),
-					'searchPlaceholder' => __( 'Search free stock images...', 'free-stock-images' ),
-					'search'            => __( 'Search', 'free-stock-images' ),
-					'loading'           => __( 'Loading...', 'free-stock-images' ),
-					'importing'         => __( 'Importing...', 'free-stock-images' ),
-					'inserted'          => __( 'Inserted', 'free-stock-images' ),
-					'imported'          => __( 'Imported', 'free-stock-images' ),
-					'error'             => __( 'Something went wrong.', 'free-stock-images' ),
-					'noResults'         => __( 'No images found.', 'free-stock-images' ),
-					'needsKey'          => __( 'API key is required for this source.', 'free-stock-images' ),
-				),
-			)
+			$this->get_localized_config()
+		);
+	}
+
+	/**
+	 * Return localized config consumed by assets/js/modal.js.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function get_localized_config() {
+		return array(
+			'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+			'nonce'        => wp_create_nonce( self::NONCE_ACTION ),
+			'searchAction' => self::AJAX_SEARCH,
+			'importAction' => self::AJAX_IMPORT,
+			'perPage'      => 20,
+			'canUpload'    => current_user_can( self::CAP_UPLOAD_FILES ),
+			'debug'        => ( defined( 'WP_DEBUG' ) && WP_DEBUG ),
+			'sources'      => $this->get_source_config(),
+			'i18n'         => array(
+				'title'             => __( 'Free Stock Images', 'free-stock-images' ),
+				'searchPlaceholder' => __( 'Search free stock images...', 'free-stock-images' ),
+				'search'            => __( 'Search', 'free-stock-images' ),
+				'loading'           => __( 'Loading...', 'free-stock-images' ),
+				'importing'         => __( 'Importing...', 'free-stock-images' ),
+				'inserted'          => __( 'Inserted', 'free-stock-images' ),
+				'imported'          => __( 'Imported', 'free-stock-images' ),
+				'error'             => __( 'Something went wrong.', 'free-stock-images' ),
+				'noResults'         => __( 'No images found.', 'free-stock-images' ),
+				'needsKey'          => __( 'API key is required for this source.', 'free-stock-images' ),
+			),
 		);
 	}
 
@@ -152,18 +195,8 @@ final class Plugin {
 	 * @return bool
 	 */
 	private function should_enqueue_assets( $hook_suffix ) {
-		$allowed_hooks = array(
-			'upload.php',
-			'post.php',
-			'post-new.php',
-			'site-editor.php',
-			'widgets.php',
-			'customize.php',
-			'settings_page_fsi-settings',
-			'media_page_fsi-media-page',
-		);
-
-		return in_array( $hook_suffix, $allowed_hooks, true );
+		unset( $hook_suffix );
+		return is_admin();
 	}
 
 	/**

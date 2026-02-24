@@ -16,8 +16,7 @@ class MediaPage {
 
 	/**
 	 * Hook into constructor if you need to enqueue assets specifically for this page.
-	 * For now, asset enqueuing is handled by MediaTab (or Plugin). If you'd like to enqueue
-	 * only for this page, add an admin_enqueue_scripts handler here and check the $hook.
+	 * By default, asset enqueuing is centralized in Core\Plugin.
 	 */
 	public function __construct() {
 		// Optional: add_action('admin_enqueue_scripts', [ $this, 'enqueue_assets' ]);

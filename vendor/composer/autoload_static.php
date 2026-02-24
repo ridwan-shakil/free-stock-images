@@ -13,13 +13,13 @@ class ComposerStaticInitfbee484fbcb98ba45566f17e8eb69e9b
     );
 
     public static $prefixLengthsPsr4 = array (
-        'R' => 
-        array (
-            'Ridwan\\FreeStockImages\\' => 23,
-        ),
         'P' => 
         array (
             'PhpParser\\' => 10,
+        ),
+        'F' => 
+        array (
+            'FreeStockImages\\' => 16,
         ),
         'D' => 
         array (
@@ -29,13 +29,13 @@ class ComposerStaticInitfbee484fbcb98ba45566f17e8eb69e9b
     );
 
     public static $prefixDirsPsr4 = array (
-        'Ridwan\\FreeStockImages\\' => 
-        array (
-            0 => __DIR__ . '/../..' . '/src',
-        ),
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'FreeStockImages\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
         ),
         'Doctrine\\Instantiator\\' => 
         array (

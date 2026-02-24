@@ -16,67 +16,44 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Define constants.
+// Plugin constants.
 define( 'FSI_PLUGIN_FILE', __FILE__ );
-define( 'FSI_PLUGIN_DIR', plugin_dir_url( __FILE__ ) );
+define( 'FSI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'FSI_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+// Backward compatibility for existing code paths.
+define( 'FSI_PLUGIN_DIR', FSI_PLUGIN_URL );
 
-// Prefer Composer autoload, but fall back to a simple PSR-4 loader if not present.
-// $composer_autoload = __DIR__ . '/vendor/autoload.php';
-// if ( file_exists( $composer_autoload ) ) {
-// 	require_once $composer_autoload;
-// } else {
-// 	// Simple PSR-4 fallback autoloader for the FreeStockImages namespace
-// 	spl_autoload_register(
-// 		function ( $class ) {
-// 			$prefix   = 'FreeStockImages\\';
-// 			$base_dir = __DIR__ . '/src/';
+// Simple PSR-4 fallback autoloader for the FreeStockImages namespace.
+spl_autoload_register(
+	static function ( $class ) {
+		$prefix = 'FreeStockImages\\';
+		$base   = __DIR__ . '/src/';
 
-// 			$len = strlen( $prefix );
-// 			if ( strncmp( $prefix, $class, $len ) !== 0 ) {
-// 				// not our namespace
-// 				return;
-// 			}
+		$length = strlen( $prefix );
+		if ( strncmp( $prefix, $class, $length ) !== 0 ) {
+			return;
+		}
 
-// 			$relative_class = substr( $class, $len );
-// 			$file           = $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
-// 			if ( file_exists( $file ) ) {
-// 				require $file;
-// 			}
-// 		}
-// 	);
-// }
-
-// // Boot plugin
-add_action(
-	'plugins_loaded',
-	function () {
-		if ( class_exists( '\FreeStockImages\Core\Plugin' ) ) {
-			// \FreeStockImages\Core\Plugin::get_instance()->init();
+		$relative = substr( $class, $length );
+		$file     = $base . str_replace( '\\', '/', $relative ) . '.php';
+		if ( file_exists( $file ) ) {
+			require_once $file;
 		}
 	}
 );
 
+// Prefer Composer autoload when available.
+$composer_autoload = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $composer_autoload ) ) {
+	require_once $composer_autoload;
+}
 
-
-
-
-// =====================  test code ===================
-
-// // add the tab
-// add_filter('media_upload_tabs', 'my_upload_tab');
-// function my_upload_tab($tabs) {
-// $tabs['mytabname'] = "My Tab Name";
-// return $tabs;
-// }
-
-// // call the new tab with wp_iframe
-// add_action('media_upload_mytabname', 'add_my_new_form');
-// function add_my_new_form() {
-// wp_iframe('my_new_form');
-// }
-
-// // the tab content
-// function my_new_form() {
-// echo media_upload_header(); // This function is used for print media uploader headers etc.
-// echo '<p>Example HTML content goes here.</p>';
-// }
+// Boot plugin.
+add_action(
+	'plugins_loaded',
+	static function () {
+		if ( class_exists( '\FreeStockImages\Core\Plugin' ) ) {
+			\FreeStockImages\Core\Plugin::get_instance()->init();
+		}
+	}
+);

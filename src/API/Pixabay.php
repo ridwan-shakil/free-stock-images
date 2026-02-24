@@ -2,55 +2,102 @@
 
 namespace FreeStockImages\API;
 
-if (! defined('ABSPATH')) {
-    exit;
+use FreeStockImages\Admin\SettingsPage;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 class Pixabay implements ProviderInterface {
+	/**
+	 * Pixabay fallback demo key for mixed key policy.
+	 *
+	 * @var string
+	 */
+	private $demo_key = '52201740-f9a6eab0da31331dc8be46c99';
 
-    private $demo_key = '52201740-f9a6eab0da31331dc8be46c99';
+	/**
+	 * @param string $query Search term.
+	 * @param array  $filters Optional filters.
+	 * @param int    $page Page number.
+	 * @param int    $perPage Results per page.
+	 * @return array
+	 */
+	public function search_images( string $query, array $filters = array(), int $page = 1, int $perPage = 20 ): array {
+		$api_key = $this->get_api_key();
+		if ( '' === $api_key ) {
+			throw new \RuntimeException( __( 'Pixabay API key is missing.', 'free-stock-images' ) );
+		}
 
-    public function search_images(string $query, array $filters = [], int $page = 1, int $perPage = 20): array {
-        $api_key = $this->get_api_key();
+		$url = add_query_arg(
+			array(
+				'key'        => $api_key,
+				'q'          => $query,
+				'page'       => max( 1, $page ),
+				'per_page'   => min( 50, max( 1, $perPage ) ),
+				'image_type' => 'photo',
+			),
+			'https://pixabay.com/api/'
+		);
 
-        $url = add_query_arg([
-            'key'   => $api_key,
-            'q'     => rawurlencode($query),
-            'page'  => $page,
-            'per_page' => $perPage,
-            'image_type' => 'photo',
-        ], 'https://pixabay.com/api/');
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 15,
+			)
+		);
 
-        $response = wp_remote_get($url);
+		if ( is_wp_error( $response ) ) {
+			throw new \RuntimeException( $response->get_error_message() );
+		}
 
-        if (is_wp_error($response)) return [];
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $status_code < 200 || $status_code >= 300 ) {
+			throw new \RuntimeException( sprintf( 'Pixabay API request failed (%d).', $status_code ) );
+		}
 
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
+		$data = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( ! is_array( $data ) ) {
+			throw new \RuntimeException( __( 'Invalid response from Pixabay API.', 'free-stock-images' ) );
+		}
 
-        if (empty($data['hits'])) return [];
+		if ( ! empty( $data['error'] ) ) {
+			throw new \RuntimeException( (string) $data['error'] );
+		}
 
-        $images = [];
-        foreach ($data['hits'] as $img) {
-            $images[] = [
-                'id'          => $img['id'],
-                'thumbnail'   => $img['previewURL'],
-                'full'        => $img['largeImageURL'],
-                'width'       => $img['imageWidth'],
-                'height'      => $img['imageHeight'],
-                'author'      => $img['user'],
-                'author_url'  => '',
-                'source'      => 'pixabay',
-                'title'       => $img['tags'] ?? '',
-                'attribution' => sprintf('Photo by %s on Pixabay', $img['user']),
-            ];
-        }
+		if ( empty( $data['hits'] ) || ! is_array( $data['hits'] ) ) {
+			return array();
+		}
 
-        return $images;
-    }
+		$images = array();
+		foreach ( $data['hits'] as $item ) {
+			if ( empty( $item['id'] ) || empty( $item['previewURL'] ) || empty( $item['largeImageURL'] ) ) {
+				continue;
+			}
 
-    public function get_api_key(): string {
-        $user_key = get_option('fsi_pixabay_key', '');
-        return $user_key ?: $this->demo_key;
-    }
+			$user_name = isset( $item['user'] ) ? (string) $item['user'] : '';
+			$images[]  = array(
+				'id'          => (string) $item['id'],
+				'thumbnail'   => esc_url_raw( (string) $item['previewURL'] ),
+				'full'        => esc_url_raw( (string) $item['largeImageURL'] ),
+				'width'       => isset( $item['imageWidth'] ) ? (int) $item['imageWidth'] : 0,
+				'height'      => isset( $item['imageHeight'] ) ? (int) $item['imageHeight'] : 0,
+				'author'      => $user_name,
+				'author_url'  => '',
+				'source'      => 'pixabay',
+				'title'       => isset( $item['tags'] ) ? (string) $item['tags'] : '',
+				'attribution' => $user_name ? sprintf( 'Photo by %s on Pixabay', $user_name ) : 'Pixabay',
+			);
+		}
+
+		return $images;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function get_api_key(): string {
+		$user_key = trim( (string) get_option( SettingsPage::OPTION_PIXABAY, '' ) );
+		return '' !== $user_key ? $user_key : $this->demo_key;
+	}
 }

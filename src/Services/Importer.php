@@ -2,90 +2,94 @@
 
 namespace FreeStockImages\Services;
 
-if (! defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
- * Importer service
- * Downloads a remote image and inserts it into WP Media Library.
+ * Downloads a remote image and inserts it into WordPress Media Library.
  */
 class Importer {
+	/**
+	 * @param string $url Remote image URL.
+	 * @param array  $args Optional image metadata.
+	 * @return int|\WP_Error
+	 */
+	public function import_from_url( string $url, array $args = array() ) {
+		if ( '' === $url ) {
+			return new \WP_Error( 'missing_url', __( 'No image URL provided.', 'free-stock-images' ) );
+		}
 
-    /**
-     * Import a remote image URL into the Media Library.
-     *
-     * @param string $url         Remote image URL
-     * @param string $title       Optional attachment title
-     * @param string $attribution Optional attribution string to store in attachment meta
-     * @return int|\WP_Error      Attachment ID on success, WP_Error on failure
-     */
-    public function import_from_url(string $url, string $title = '', string $attribution = '') {
-        if (empty($url)) {
-            return new \WP_Error('missing_url', __('No URL provided', 'free-stock-images'));
-        }
+		$tmp_file = download_url( $url, 15 );
+		if ( is_wp_error( $tmp_file ) ) {
+			return new \WP_Error( 'download_failed', $tmp_file->get_error_message() );
+		}
 
-        // Download to temp file
-        $tmp = download_url($url);
+		$path     = (string) parse_url( $url, PHP_URL_PATH );
+		$basename = basename( $path );
+		if ( '' === $basename || '.' === $basename || '/' === $basename ) {
+			$basename = 'fsi-' . wp_generate_password( 12, false ) . '.jpg';
+		}
 
-        if (is_wp_error($tmp)) {
-            return new \WP_Error('download_failed', $tmp->get_error_message());
-        }
+		$file = array(
+			'name'     => sanitize_file_name( $basename ),
+			'tmp_name' => $tmp_file,
+		);
 
-        // Prepare an array similar to a PHP file upload.
-        $file = [
-            'name'     => basename(parse_url($url, PHP_URL_PATH)),
-            'tmp_name' => $tmp,
-        ];
+		$results = wp_handle_sideload(
+			$file,
+			array(
+				'test_form' => false,
+			)
+		);
 
-        // Allow sideload and skip form test.
-        $overrides = [
-            'test_form' => false,
-        ];
+		if ( ! empty( $results['error'] ) ) {
+			@unlink( $tmp_file );
+			return new \WP_Error( 'sideload_error', (string) $results['error'] );
+		}
 
-        // Move the temporary file into the uploads directory.
-        $results = wp_handle_sideload($file, $overrides);
+		$file_path = isset( $results['file'] ) ? (string) $results['file'] : '';
+		$file_type = isset( $results['type'] ) ? (string) $results['type'] : '';
 
-        if (! empty($results['error'])) {
-            // Clean up temp file
-            @unlink($tmp);
-            return new \WP_Error('sideload_error', $results['error']);
-        }
+		if ( '' === $file_path ) {
+			return new \WP_Error( 'missing_file_path', __( 'Could not determine uploaded file path.', 'free-stock-images' ) );
+		}
 
-        $file_path = $results['file'];
-        $file_type = $results['type'];
+		$title = isset( $args['title'] ) ? sanitize_text_field( (string) $args['title'] ) : '';
+		if ( '' === $title ) {
+			$title = sanitize_file_name( pathinfo( $file_path, PATHINFO_FILENAME ) );
+		}
 
-        // Prepare attachment data
-        $attachment = [
-            'post_mime_type' => $file_type,
-            'post_title'     => ! empty($title) ? sanitize_text_field($title) : sanitize_file_name(pathinfo($file_path, PATHINFO_FILENAME)),
-            'post_content'   => '',
-            'post_status'    => 'inherit',
-        ];
+		$attachment = array(
+			'post_mime_type' => $file_type,
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
 
-        // Insert attachment into the Media Library
-        $attach_id = wp_insert_attachment($attachment, $file_path);
+		$attach_id = wp_insert_attachment( $attachment, $file_path );
+		if ( is_wp_error( $attach_id ) || ! $attach_id ) {
+			return new \WP_Error( 'attachment_insert_failed', __( 'Failed to insert attachment.', 'free-stock-images' ) );
+		}
 
-        if (is_wp_error($attach_id) || ! $attach_id) {
-            return new \WP_Error('attachment_insert_failed', __('Failed to insert attachment', 'free-stock-images'));
-        }
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		$metadata = wp_generate_attachment_metadata( $attach_id, $file_path );
+		if ( is_wp_error( $metadata ) ) {
+			wp_update_attachment_metadata( $attach_id, array() );
+		} else {
+			wp_update_attachment_metadata( $attach_id, $metadata );
+		}
 
-        // Generate metadata (requires image.php)
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-        $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
+		if ( ! empty( $args['attribution'] ) ) {
+			update_post_meta( $attach_id, '_fsi_attribution', sanitize_text_field( (string) $args['attribution'] ) );
+		}
+		if ( ! empty( $args['source'] ) ) {
+			update_post_meta( $attach_id, '_fsi_source', sanitize_key( (string) $args['source'] ) );
+		}
+		if ( ! empty( $args['remote_id'] ) ) {
+			update_post_meta( $attach_id, '_fsi_remote_id', sanitize_text_field( (string) $args['remote_id'] ) );
+		}
 
-        if (is_wp_error($attach_data)) {
-            // still update meta with empty array
-            wp_update_attachment_metadata($attach_id, []);
-        } else {
-            wp_update_attachment_metadata($attach_id, $attach_data);
-        }
-
-        // Save attribution into attachment meta if provided
-        if (! empty($attribution)) {
-            update_post_meta($attach_id, '_fsi_attribution', sanitize_text_field($attribution));
-        }
-
-        return $attach_id;
-    }
+		return (int) $attach_id;
+	}
 }

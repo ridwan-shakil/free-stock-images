@@ -74,7 +74,9 @@ jQuery(function ($) {
 			query: params.query || '',
 			source: params.source || 'pixabay',
 			page: params.page || 1,
-			per_page: perPage
+			per_page: perPage,
+			orientation: params.orientation || '',
+			color: params.color || ''
 		});
 	};
 
@@ -100,6 +102,10 @@ jQuery(function ($) {
 		this.page = 1;
 		this.loading = false;
 		this.reachedEnd = false;
+		this.filters = {
+			orientation: '',
+			color: ''
+		};
 	}
 
 	FsiStore.prototype.resetPagination = function () {
@@ -115,6 +121,7 @@ jQuery(function ($) {
 		const $root = $('<div class="fsi-root"></div>');
 		const $toolbar = $('<div class="fsi-toolbar"></div>');
 		const $sources = $('<div class="fsi-sources"></div>');
+		const $filters = $('<div class="fsi-filters"></div>');
 		const $searchWrap = $('<div class="fsi-search"></div>');
 
 		Object.keys(sources).forEach(function (key) {
@@ -132,8 +139,35 @@ jQuery(function ($) {
 		$searchWrap.append('<input type="text" class="fsi-search-input" placeholder="' + escapeHtml(t('searchPlaceholder', 'Search images...')) + '">');
 		$searchWrap.append('<button type="button" class="button button-primary fsi-search-btn">' + escapeHtml(t('search', 'Search')) + '</button>');
 
+		$filters.append(
+			'<select class="fsi-filter-orientation">' +
+			'  <option value="">Any orientation</option>' +
+			'  <option value="landscape">Landscape</option>' +
+			'  <option value="portrait">Portrait</option>' +
+			'  <option value="square">Square</option>' +
+			'</select>'
+		);
+		$filters.append(
+			'<select class="fsi-filter-color">' +
+			'  <option value="">Any color</option>' +
+			'  <option value="red">Red</option>' +
+			'  <option value="orange">Orange</option>' +
+			'  <option value="yellow">Yellow</option>' +
+			'  <option value="green">Green</option>' +
+			'  <option value="turquoise">Turquoise</option>' +
+			'  <option value="blue">Blue</option>' +
+			'  <option value="lilac">Lilac</option>' +
+			'  <option value="pink">Pink</option>' +
+			'  <option value="white">White</option>' +
+			'  <option value="gray">Gray</option>' +
+			'  <option value="black">Black</option>' +
+			'  <option value="brown">Brown</option>' +
+			'</select>'
+		);
+
 		$toolbar.append('<h2 class="fsi-title">' + escapeHtml(t('title', 'Free Stock Images')) + '</h2>');
 		$toolbar.append($sources);
+		$toolbar.append($filters);
 		$toolbar.append($searchWrap);
 
 		const $content = $(
@@ -207,6 +241,57 @@ jQuery(function ($) {
 		});
 	}
 
+	function refreshCollection(collection) {
+		if (!collection) {
+			return;
+		}
+		if (typeof collection.fetch === 'function') {
+			try {
+				collection.fetch({ reset: true });
+			} catch (e) {
+				debugLog('Collection fetch failed', e);
+			}
+		}
+		if (typeof collection.more === 'function') {
+			try {
+				collection.more();
+			} catch (e) {
+				debugLog('Collection more() failed', e);
+			}
+		}
+	}
+
+	function refreshMediaLibrary(frame, mediaApi) {
+		if (!frame) {
+			return;
+		}
+
+		try {
+			if (frame.states && typeof frame.states.each === 'function') {
+				frame.states.each(function (state) {
+					if (!state || typeof state.get !== 'function') {
+						return;
+					}
+					refreshCollection(state.get('library'));
+				});
+			}
+
+			const activeState = frame.state && frame.state();
+			if (activeState && typeof activeState.get === 'function') {
+				refreshCollection(activeState.get('library'));
+			}
+		} catch (error) {
+			debugLog('Failed to refresh media library states', error);
+		}
+
+		if (mediaApi && mediaApi.frame && mediaApi.frame !== frame) {
+			const fallbackState = mediaApi.frame.state && mediaApi.frame.state();
+			if (fallbackState && typeof fallbackState.get === 'function') {
+				refreshCollection(fallbackState.get('library'));
+			}
+		}
+	}
+
 	function attachUIHandlers($ui, options) {
 		const api = new ApiClient();
 		const store = new FsiStore();
@@ -217,6 +302,8 @@ jQuery(function ($) {
 		const $results = $ui.find('.fsi-results');
 		const $loader = $ui.find('.fsi-loader');
 		const $searchInput = $ui.find('.fsi-search-input');
+		const $orientationInput = $ui.find('.fsi-filter-orientation');
+		const $colorInput = $ui.find('.fsi-filter-color');
 
 		function setActiveSource(sourceKey) {
 			$ui.find('.fsi-source-btn').removeClass('active');
@@ -242,7 +329,9 @@ jQuery(function ($) {
 			api.search({
 				query: store.query,
 				source: store.source,
-				page: store.page
+				page: store.page,
+				orientation: store.filters.orientation,
+				color: store.filters.color
 			}).done(function (res) {
 				if (!res || !res.success) {
 					const message = res && res.data && res.data.message ? res.data.message : t('error', 'Something went wrong.');
@@ -287,6 +376,18 @@ jQuery(function ($) {
 
 		$ui.on('click', '.fsi-search-btn', function () {
 			store.query = String($searchInput.val() || '').trim();
+			store.filters.orientation = String($orientationInput.val() || '').trim();
+			store.filters.color = String($colorInput.val() || '').trim();
+			$results.empty();
+			store.resetPagination();
+			if (store.query) {
+				runSearch();
+			}
+		});
+
+		$ui.on('change', '.fsi-filter-orientation, .fsi-filter-color', function () {
+			store.filters.orientation = String($orientationInput.val() || '').trim();
+			store.filters.color = String($colorInput.val() || '').trim();
 			$results.empty();
 			store.resetPagination();
 			if (store.query) {
@@ -325,8 +426,10 @@ jQuery(function ($) {
 				}
 
 				$item.removeClass('is-loading').addClass('is-done');
+				const resolvedFrame = frameResolver();
+				refreshMediaLibrary(resolvedFrame, mediaApi);
 				if (autoInsert && res.data && res.data.attachment_id) {
-					autoInsertIntoFrame(frameResolver(), res.data.attachment_id, mediaApi);
+					autoInsertIntoFrame(resolvedFrame, res.data.attachment_id, mediaApi);
 					showNotice($ui, t('inserted', 'Inserted'), 'success');
 				} else {
 					showNotice($ui, t('imported', 'Imported'), 'success');
@@ -442,16 +545,26 @@ jQuery(function ($) {
 
 		function ensureFallbackTab() {
 			const $router = $runtime('.media-frame-router');
+			const $routerTabs = $router.find('.media-router').first();
 			const $content = $runtime('.media-frame-content');
 			if (!$router.length || !$content.length) {
 				return;
 			}
 
+			const hasNativeFsiTab = $router.find('#menu-item-fsi').length > 0;
+			if (hasNativeFsiTab) {
+				$router.find('.' + fallbackClass).remove();
+				$content.find('.' + fallbackPanelClass).remove();
+				debugLog('Native #menu-item-fsi exists; skipping fallback tab injection');
+				return;
+			}
+
 			if (!$router.find('.' + fallbackClass).length) {
-				$router.append(
-					'<a href="#" class="media-menu-item ' + fallbackClass + '" data-content="fsi">' +
+				const $target = $routerTabs.length ? $routerTabs : $router;
+				$target.append(
+					'<button type="button" role="tab" class="media-menu-item ' + fallbackClass + '" id="menu-item-fsi-fallback" data-content="fsi">' +
 					escapeHtml(t('title', 'Free Stock Images')) +
-					'</a>'
+					'</button>'
 				);
 				debugLog('DOM fallback tab injected');
 			}
@@ -470,8 +583,11 @@ jQuery(function ($) {
 			const $content = $runtime('.media-frame-content');
 			const $panel = $content.find('.' + fallbackPanelClass);
 
-			$runtime('.media-frame-router .media-menu-item, .media-frame-router .media-router a').removeClass('active');
-			$runtime(this).addClass('active');
+			$runtime('.media-frame-router .media-menu-item, .media-frame-router .media-router .media-menu-item')
+				.removeClass('active')
+				.attr('aria-selected', 'false')
+				.attr('tabindex', '-1');
+			$runtime(this).addClass('active').attr('aria-selected', 'true').attr('tabindex', '0');
 
 			$content.children().hide();
 			$panel.show();

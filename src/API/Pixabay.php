@@ -29,16 +29,29 @@ class Pixabay implements ProviderInterface {
 			throw new \RuntimeException( __( 'Pixabay API key is missing.', 'free-stock-images' ) );
 		}
 
-		$url = add_query_arg(
-			array(
-				'key'        => $api_key,
-				'q'          => $query,
-				'page'       => max( 1, $page ),
-				'per_page'   => min( 50, max( 1, $perPage ) ),
-				'image_type' => 'photo',
-			),
-			'https://pixabay.com/api/'
+		$params = array(
+			'key'        => $api_key,
+			'q'          => $query,
+			'page'       => max( 1, $page ),
+			'per_page'   => min( 50, max( 1, $perPage ) ),
+			'image_type' => 'photo',
 		);
+
+		if ( ! empty( $filters['orientation'] ) ) {
+			$orientation_map = array(
+				'landscape' => 'horizontal',
+				'portrait'  => 'vertical',
+			);
+			if ( isset( $orientation_map[ $filters['orientation'] ] ) ) {
+				$params['orientation'] = $orientation_map[ $filters['orientation'] ];
+			}
+		}
+
+		if ( ! empty( $filters['color'] ) ) {
+			$params['colors'] = sanitize_key( (string) $filters['color'] );
+		}
+
+		$url = add_query_arg( $params, 'https://pixabay.com/api/' );
 
 		$response = wp_remote_get(
 			$url,

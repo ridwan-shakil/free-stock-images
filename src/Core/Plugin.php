@@ -244,6 +244,17 @@ final class Plugin {
 		$source   = isset( $_POST['source'] ) ? sanitize_key( wp_unslash( $_POST['source'] ) ) : 'pixabay';
 		$page     = isset( $_POST['page'] ) ? max( 1, absint( $_POST['page'] ) ) : 1;
 		$per_page = isset( $_POST['per_page'] ) ? max( 1, min( 50, absint( $_POST['per_page'] ) ) ) : 20;
+		$orientation = isset( $_POST['orientation'] ) ? sanitize_key( wp_unslash( $_POST['orientation'] ) ) : '';
+		$color       = isset( $_POST['color'] ) ? sanitize_key( wp_unslash( $_POST['color'] ) ) : '';
+
+		if ( ! in_array( $orientation, array( '', 'landscape', 'portrait', 'square' ), true ) ) {
+			$orientation = '';
+		}
+
+		$allowed_colors = array( '', 'grayscale', 'transparent', 'red', 'orange', 'yellow', 'green', 'turquoise', 'blue', 'lilac', 'pink', 'white', 'gray', 'black', 'brown' );
+		if ( ! in_array( $color, $allowed_colors, true ) ) {
+			$color = '';
+		}
 
 		if ( '' === $query ) {
 			wp_send_json_success(
@@ -278,7 +289,11 @@ final class Plugin {
 		}
 
 		try {
-			$images = $provider->search_images( $query, array(), $page, $per_page );
+			$filters = array(
+				'orientation' => $orientation,
+				'color'       => $color,
+			);
+			$images  = $provider->search_images( $query, $filters, $page, $per_page );
 			wp_send_json_success(
 				array(
 					'images' => $images,

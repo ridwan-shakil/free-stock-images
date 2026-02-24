@@ -29,14 +29,24 @@ class Pexels implements ProviderInterface {
 			throw new \RuntimeException( __( 'Pexels API key is missing.', 'free-stock-images' ) );
 		}
 
-		$url = add_query_arg(
-			array(
-				'query'    => $query,
-				'page'     => max( 1, $page ),
-				'per_page' => min( 80, max( 1, $perPage ) ),
-			),
-			'https://api.pexels.com/v1/search'
+		$params = array(
+			'query'    => $query,
+			'page'     => max( 1, $page ),
+			'per_page' => min( 80, max( 1, $perPage ) ),
 		);
+
+		if ( ! empty( $filters['orientation'] ) ) {
+			$orientation_map = array(
+				'landscape' => 'landscape',
+				'portrait'  => 'portrait',
+				'square'    => 'square',
+			);
+			if ( isset( $orientation_map[ $filters['orientation'] ] ) ) {
+				$params['orientation'] = $orientation_map[ $filters['orientation'] ];
+			}
+		}
+
+		$url = add_query_arg( $params, 'https://api.pexels.com/v1/search' );
 
 		$response = wp_remote_get(
 			$url,

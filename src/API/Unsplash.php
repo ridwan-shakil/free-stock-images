@@ -24,14 +24,28 @@ class Unsplash implements ProviderInterface {
 			throw new \RuntimeException( __( 'Unsplash API key is required.', 'free-stock-images' ) );
 		}
 
-		$url = add_query_arg(
-			array(
-				'query'    => $query,
-				'page'     => max( 1, $page ),
-				'per_page' => min( 30, max( 1, $perPage ) ),
-			),
-			'https://api.unsplash.com/search/photos'
+		$params = array(
+			'query'    => $query,
+			'page'     => max( 1, $page ),
+			'per_page' => min( 30, max( 1, $perPage ) ),
 		);
+
+		if ( ! empty( $filters['orientation'] ) ) {
+			$orientation_map = array(
+				'landscape' => 'landscape',
+				'portrait'  => 'portrait',
+				'square'    => 'squarish',
+			);
+			if ( isset( $orientation_map[ $filters['orientation'] ] ) ) {
+				$params['orientation'] = $orientation_map[ $filters['orientation'] ];
+			}
+		}
+
+		if ( ! empty( $filters['color'] ) ) {
+			$params['color'] = sanitize_key( (string) $filters['color'] );
+		}
+
+		$url = add_query_arg( $params, 'https://api.unsplash.com/search/photos' );
 
 		$response = wp_remote_get(
 			$url,

@@ -29,6 +29,16 @@
 	gap: 6px;
 }
 
+.fsi-filters {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+
+.fsi-filters select {
+	min-width: 140px;
+}
+
 .fsi-search {
 	margin-left: auto;
 	display: flex;

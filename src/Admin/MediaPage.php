@@ -23,7 +23,7 @@ class MediaPage {
 	}
 
 	/**
-	 * Render the standalone page. The plugin core should call$this method
+	 * Render the standalone page. The plugin core should call this method
 	 * when rendering the submenu page registered under upload.php.
 	 */
 	public function render_page() {

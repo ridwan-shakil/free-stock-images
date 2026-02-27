@@ -2,7 +2,7 @@
 
 namespace FreeStockImages\Admin;
 
-if (!defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -13,7 +13,6 @@ if (!defined( 'ABSPATH' ) ) {
  * Modal integration is currently handled by Core\Plugin + assets/js/modal.js.
  */
 class MediaTab {
-
 	/**
 	 * Constructor: hooks
 	 */

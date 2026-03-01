@@ -159,7 +159,17 @@ class AssetEnqueuer {
 	 * @return bool
 	 */
 	private function should_enqueue_assets( $hook_suffix ) {
-		unset( $hook_suffix );
-		return is_admin();
+		// unset( $hook_suffix );
+		// return is_admin();
+
+		$modal_locations = array(
+			'post.php',
+			'post-new.php',
+			'media_page_fsi-media-page',
+		);
+
+		if ( is_admin() && in_array( $hook_suffix, $modal_locations, true ) ) {
+			return true;
+		}
 	}
 }

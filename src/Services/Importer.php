@@ -25,7 +25,7 @@ class Importer {
 			return new \WP_Error( 'download_failed', $tmp_file->get_error_message() );
 		}
 
-		$path     = (string) parse_url( $url, PHP_URL_PATH );
+		$path     = (string) wp_parse_url( $url, PHP_URL_PATH );
 		$basename = basename( $path );
 		if ( '' === $basename || '.' === $basename || '/' === $basename ) {
 			$basename = 'fsi-' . wp_generate_password( 12, false ) . '.jpg';

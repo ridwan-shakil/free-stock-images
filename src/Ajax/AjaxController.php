@@ -2,15 +2,15 @@
 /**
  * Handles plugin admin-ajax endpoints.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Ajax;
+namespace PlugmintStockImages\Ajax;
 
-use FreeStockImages\API\ProviderFactory;
-use FreeStockImages\API\SourcePolicy;
-use FreeStockImages\Services\Importer;
+use PlugmintStockImages\API\ProviderFactory;
+use PlugmintStockImages\API\SourcePolicy;
+use PlugmintStockImages\Services\Importer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,11 +2,11 @@
 /**
  * Provider factory for source -> provider instance mapping.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\API;
+namespace PlugmintStockImages\API;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

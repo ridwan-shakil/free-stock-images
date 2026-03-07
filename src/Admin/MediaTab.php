@@ -2,11 +2,11 @@
 /**
  * Renders the standalone Media -> Free Stock Images admin page.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Admin;
+namespace PlugmintStockImages\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -76,10 +76,10 @@ class MediaTab {
 		// Use the plugin URL constant defined in bootstrap.
 		if ( defined( 'FSIMGS_PLUGIN_DIR' ) ) {
 			// CSS.
-			wp_enqueue_style( 'fsimgs-admin-style', FSIMGS_PLUGIN_DIR . 'assets/css/styles.css', array(), \FreeStockImages\Core\Plugin::VERSION ?? null );
+			wp_enqueue_style( 'fsimgs-admin-style', FSIMGS_PLUGIN_DIR . 'assets/css/styles.css', array(), \PlugmintStockImages\Core\Plugin::VERSION ?? null );
 
 			// JS.
-			wp_enqueue_script( 'fsimgs-modal', FSIMGS_PLUGIN_DIR . 'assets/js/modal.js', array( 'jquery' ), \FreeStockImages\Core\Plugin::VERSION ?? null, true );
+			wp_enqueue_script( 'fsimgs-modal', FSIMGS_PLUGIN_DIR . 'assets/js/modal.js', array( 'jquery' ), \PlugmintStockImages\Core\Plugin::VERSION ?? null, true );
 
 			// Localization (keep nonce & ajax_url available).
 			wp_localize_script(

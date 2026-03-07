@@ -2,11 +2,11 @@
 /**
  * Service for importing remote images into WordPress Media Library.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Services;
+namespace PlugmintStockImages\Services;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

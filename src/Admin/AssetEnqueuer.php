@@ -2,13 +2,13 @@
 /**
  * Registers admin/Elementor assets and localizes runtime config.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Admin;
+namespace PlugmintStockImages\Admin;
 
-use FreeStockImages\API\SourcePolicy;
+use PlugmintStockImages\API\SourcePolicy;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -196,7 +196,7 @@ class AssetEnqueuer {
 		$modal_locations = array(
 			'post.php',
 			'post-new.php',
-			'media_page_fsi-media-page',
+			'media_page_fsimgs-media-page',
 		);
 
 		if ( is_admin() && in_array( $hook_suffix, $modal_locations, true ) ) {

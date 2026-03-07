@@ -2,20 +2,20 @@
 /**
  * Main plugin class responsible for initializing services and orchestrating plugin functionality.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Core;
+namespace PlugmintStockImages\Core;
 
-use FreeStockImages\Admin\AssetEnqueuer;
-use FreeStockImages\Admin\MenuRegistrar;
-use FreeStockImages\Admin\MediaPage;
-use FreeStockImages\Admin\SettingsPage;
-use FreeStockImages\Ajax\AjaxController;
-use FreeStockImages\API\ProviderFactory;
-use FreeStockImages\API\SourcePolicy;
-use FreeStockImages\Services\Importer;
+use PlugmintStockImages\Admin\AssetEnqueuer;
+use PlugmintStockImages\Admin\MenuRegistrar;
+use PlugmintStockImages\Admin\MediaPage;
+use PlugmintStockImages\Admin\SettingsPage;
+use PlugmintStockImages\Ajax\AjaxController;
+use PlugmintStockImages\API\ProviderFactory;
+use PlugmintStockImages\API\SourcePolicy;
+use PlugmintStockImages\Services\Importer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,11 +2,11 @@
 /**
  * Provider interface defining required methods for all API providers.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\API;
+namespace PlugmintStockImages\API;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -2,13 +2,13 @@
 /**
  * Encapsulates source enablement and source config for UI localization.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\API;
+namespace PlugmintStockImages\API;
 
-use FreeStockImages\Admin\SettingsPage;
+use PlugmintStockImages\Admin\SettingsPage;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

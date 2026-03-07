@@ -2,11 +2,11 @@
 /**
  * Registers plugin admin menus and renders delegated pages.
  *
- * @package FreeStockImages
+ * @package PlugmintStockImages
  * @since 1.0.0
  */
 
-namespace FreeStockImages\Admin;
+namespace PlugmintStockImages\Admin;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Implements the Pixabay API provider.
+ *
+ * @package FreeStockImages
+ * @since 1.0.0
+ */
 
 namespace FreeStockImages\API;
 
@@ -8,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Implements the Pixabay API provider.
+ */
 class Pixabay implements ProviderInterface {
 	/**
 	 * Pixabay fallback demo key for mixed key policy.
@@ -17,23 +26,26 @@ class Pixabay implements ProviderInterface {
 	private $demo_key = '52201740-f9a6eab0da31331dc8be46c99';
 
 	/**
+	 * Searches images on Pixabay.
+	 *
 	 * @param string $query Search term.
 	 * @param array  $filters Optional filters.
 	 * @param int    $page Page number.
-	 * @param int    $perPage Results per page.
+	 * @param int    $per_page Results per page.
 	 * @return array
+	 * @throws \RuntimeException On API errors or invalid responses.
 	 */
-	public function search_images( string $query, array $filters = array(), int $page = 1, int $perPage = 20 ): array {
+	public function search_images( string $query, array $filters = array(), int $page = 1, int $per_page = 20 ): array {
 		$api_key = $this->get_api_key();
 		if ( '' === $api_key ) {
-			throw new \RuntimeException( __( 'Pixabay API key is missing.', 'free-stock-images' ) );
+			throw new \RuntimeException( esc_html__( 'Pixabay API key is missing.', 'plugmint-stock-images' ) );
 		}
 
 		$params = array(
 			'key'        => $api_key,
 			'q'          => $query,
 			'page'       => max( 1, $page ),
-			'per_page'   => min( 50, max( 1, $perPage ) ),
+			'per_page'   => min( 50, max( 1, $per_page ) ),
 			'image_type' => 'photo',
 		);
 
@@ -61,21 +73,21 @@ class Pixabay implements ProviderInterface {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			throw new \RuntimeException( $response->get_error_message() );
+			throw new \RuntimeException( esc_html( $response->get_error_message() ) );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			throw new \RuntimeException( sprintf( 'Pixabay API request failed (%d).', $status_code ) );
+			throw new \RuntimeException( esc_html( sprintf( 'Pixabay API request failed (%d).', $status_code ) ) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $data ) ) {
-			throw new \RuntimeException( __( 'Invalid response from Pixabay API.', 'free-stock-images' ) );
+			throw new \RuntimeException( esc_html__( 'Invalid response from Pixabay API.', 'plugmint-stock-images' ) );
 		}
 
 		if ( ! empty( $data['error'] ) ) {
-			throw new \RuntimeException( (string) $data['error'] );
+			throw new \RuntimeException( esc_html( (string) $data['error'] ) );
 		}
 
 		if ( empty( $data['hits'] ) || ! is_array( $data['hits'] ) ) {
@@ -107,6 +119,8 @@ class Pixabay implements ProviderInterface {
 	}
 
 	/**
+	 * Gets the API key to use for requests. Respects the mixed key policy by returning the user key if set, or the demo key otherwise.
+	 *
 	 * @return string
 	 */
 	public function get_api_key(): string {

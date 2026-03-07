@@ -1,4 +1,10 @@
 <?php
+/**
+ * Main plugin class responsible for initializing services and orchestrating plugin functionality.
+ *
+ * @package FreeStockImages
+ * @since 1.0.0
+ */
 
 namespace FreeStockImages\Core;
 
@@ -23,33 +29,43 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 final class Plugin {
 	const VERSION          = '1.1.0';
-	const NONCE_ACTION     = 'fsi_nonce';
-	const AJAX_SEARCH      = 'fsi_search';
-	const AJAX_IMPORT      = 'fsi_import';
+	const NONCE_ACTION     = 'fsimgs_nonce';
+	const AJAX_SEARCH      = 'fsimgs_search';
+	const AJAX_IMPORT      = 'fsimgs_import';
 	const CAP_MANAGE       = 'manage_options';
 	const CAP_UPLOAD_FILES = 'upload_files';
 
 	/**
+	 * Singleton instance.
+	 *
 	 * @var Plugin|null
 	 */
 	private static $instance = null;
 
 	/**
+	 * Menu registrar service.
+	 *
 	 * @var MenuRegistrar|null
 	 */
 	private $menu_registrar;
 
 	/**
+	 * Asset enqueuer service.
+	 *
 	 * @var AssetEnqueuer|null
 	 */
 	private $asset_enqueuer;
 
 	/**
+	 * AJAX controller service.
+	 *
 	 * @var AjaxController|null
 	 */
 	private $ajax_controller;
 
 	/**
+	 * Get the singleton instance of the plugin.
+	 *
 	 * @return Plugin
 	 */
 	public static function get_instance() {
@@ -60,6 +76,9 @@ final class Plugin {
 		return self::$instance;
 	}
 
+	/**
+	 * Private constructor to enforce singleton pattern.
+	 */
 	private function __construct() {
 	}
 

@@ -1,4 +1,10 @@
 <?php
+/**
+ * Unsplash API provider implementation.
+ *
+ * @package FreeStockImages
+ * @since 1.0.0
+ */
 
 namespace FreeStockImages\API;
 
@@ -8,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Unsplash API provider implementation.
+ */
 class Unsplash implements ProviderInterface {
 	/**
 	 * Search images on Unsplash.
@@ -15,19 +24,20 @@ class Unsplash implements ProviderInterface {
 	 * @param string $query Search term.
 	 * @param array  $filters Optional filters.
 	 * @param int    $page Page number.
-	 * @param int    $perPage Results per page.
+	 * @param int    $per_page Results per page.
 	 * @return array
+	 * @throws \RuntimeException On API errors or invalid responses.
 	 */
-	public function search_images( string $query, array $filters = array(), int $page = 1, int $perPage = 20 ): array {
+	public function search_images( string $query, array $filters = array(), int $page = 1, int $per_page = 20 ): array {
 		$api_key = $this->get_api_key();
 		if ( '' === $api_key ) {
-			throw new \RuntimeException( __( 'Unsplash API key is required.', 'free-stock-images' ) );
+			throw new \RuntimeException( esc_html__( 'Unsplash API key is required.', 'plugmint-stock-images' ) );
 		}
 
 		$params = array(
 			'query'    => $query,
 			'page'     => max( 1, $page ),
-			'per_page' => min( 30, max( 1, $perPage ) ),
+			'per_page' => min( 30, max( 1, $per_page ) ),
 		);
 
 		if ( ! empty( $filters['orientation'] ) ) {
@@ -58,17 +68,17 @@ class Unsplash implements ProviderInterface {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			throw new \RuntimeException( $response->get_error_message() );
+			throw new \RuntimeException( esc_html( $response->get_error_message() ) );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			throw new \RuntimeException( sprintf( 'Unsplash API request failed (%d).', $status_code ) );
+			throw new \RuntimeException( esc_html( sprintf( 'Unsplash API request failed (%d).', $status_code ) ) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $data ) || empty( $data['results'] ) || ! is_array( $data['results'] ) ) {
-			return array();
+			throw new \RuntimeException( esc_html__( 'Invalid response from Unsplash API.', 'plugmint-stock-images' ) );
 		}
 
 		$images = array();

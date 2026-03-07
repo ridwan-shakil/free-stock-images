@@ -1,4 +1,10 @@
 <?php
+/**
+ * Provider factory for source -> provider instance mapping.
+ *
+ * @package FreeStockImages
+ * @since 1.0.0
+ */
 
 namespace FreeStockImages\API;
 
@@ -11,6 +17,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ProviderFactory {
 	/**
+	 * Creates a provider instance based on the source key.
+	 *
 	 * @param string $source Provider key.
 	 * @return ProviderInterface|null
 	 */

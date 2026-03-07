@@ -1,4 +1,10 @@
 <?php
+/**
+ * Service for importing remote images into WordPress Media Library.
+ *
+ * @package FreeStockImages
+ * @since 1.0.0
+ */
 
 namespace FreeStockImages\Services;
 
@@ -11,13 +17,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Importer {
 	/**
+	 * Imports an image from a remote URL into the WordPress Media Library.
+	 *
 	 * @param string $url Remote image URL.
 	 * @param array  $args Optional image metadata.
 	 * @return int|\WP_Error
 	 */
 	public function import_from_url( string $url, array $args = array() ) {
 		if ( '' === $url ) {
-			return new \WP_Error( 'missing_url', __( 'No image URL provided.', 'free-stock-images' ) );
+			return new \WP_Error( 'missing_url', __( 'No image URL provided.', 'plugmint-stock-images' ) );
 		}
 
 		$tmp_file = download_url( $url, 15 );
@@ -52,7 +60,7 @@ class Importer {
 		$file_type = isset( $results['type'] ) ? (string) $results['type'] : '';
 
 		if ( '' === $file_path ) {
-			return new \WP_Error( 'missing_file_path', __( 'Could not determine uploaded file path.', 'free-stock-images' ) );
+			return new \WP_Error( 'missing_file_path', __( 'Could not determine uploaded file path.', 'plugmint-stock-images' ) );
 		}
 
 		$title = isset( $args['title'] ) ? sanitize_text_field( (string) $args['title'] ) : '';
@@ -69,7 +77,7 @@ class Importer {
 
 		$attach_id = wp_insert_attachment( $attachment, $file_path );
 		if ( is_wp_error( $attach_id ) || ! $attach_id ) {
-			return new \WP_Error( 'attachment_insert_failed', __( 'Failed to insert attachment.', 'free-stock-images' ) );
+			return new \WP_Error( 'attachment_insert_failed', __( 'Failed to insert attachment.', 'plugmint-stock-images' ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/image.php';

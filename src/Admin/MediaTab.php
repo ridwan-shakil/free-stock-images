@@ -1,19 +1,24 @@
 <?php
+/**
+ * Renders the standalone Media -> Free Stock Images admin page.
+ *
+ * @package PlugmintStockImages
+ * @since 1.0.0
+ */
 
-namespace FreeStockImages\Admin;
+namespace PlugmintStockImages\Admin;
 
-if (!defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
 /**
  * MediaTab
  *
- * Responsible for injecting the media modal template (Underscore template)
- * and ensuring modal assets are available when the WordPress media modal is used.
+ * Legacy class kept for backward compatibility.
+ * Modal integration is currently handled by Core\Plugin + assets/js/modal.js.
  */
 class MediaTab {
-
 	/**
 	 * Constructor: hooks
 	 */
@@ -32,9 +37,9 @@ class MediaTab {
 	 */
 	public function print_media_template() {
 		?>
-		<script type="text/template" id="tmpl-fsi-media-tab">
-			<div class="fsi-tab" style="display:none;">
-				<div class="fsi-ui-root"></div>
+		<script type="text/template" id="tmpl-fsimgs-media-tab">
+			<div class="fsimgs-tab" style="display:none;">
+				<div class="fsimgs-ui-root"></div>
 			</div>
 		</script>
 		<?php
@@ -68,21 +73,21 @@ class MediaTab {
 			return;
 		}
 
-		// Use the plugin URL constant defined in bootstrap
-		if ( defined( 'FSI_PLUGIN_DIR' ) ) {
-			// CSS
-			wp_enqueue_style( 'fsi-admin-style', FSI_PLUGIN_DIR . 'assets/css/styles.css', array(), \FreeStockImages\Core\Plugin::VERSION ?? null );
+		// Use the plugin URL constant defined in bootstrap.
+		if ( defined( 'FSIMGS_PLUGIN_DIR' ) ) {
+			// CSS.
+			wp_enqueue_style( 'fsimgs-admin-style', FSIMGS_PLUGIN_DIR . 'assets/css/styles.css', array(), \PlugmintStockImages\Core\Plugin::VERSION ?? null );
 
-			// JS
-			wp_enqueue_script( 'fsi-modal', FSI_PLUGIN_DIR . 'assets/js/modal.js', array( 'jquery' ), \FreeStockImages\Core\Plugin::VERSION ?? null, true );
+			// JS.
+			wp_enqueue_script( 'fsimgs-modal', FSIMGS_PLUGIN_DIR . 'assets/js/modal.js', array( 'jquery' ), \PlugmintStockImages\Core\Plugin::VERSION ?? null, true );
 
 			// Localization (keep nonce & ajax_url available).
 			wp_localize_script(
-				'fsi-modal',
-				'fsi_ajax',
+				'fsimgs-modal',
+				'fsimgs_ajax',
 				array(
 					'ajax_url' => admin_url( 'admin-ajax.php' ),
-					'nonce'    => wp_create_nonce( 'fsi_nonce' ),
+					'nonce'    => wp_create_nonce( 'fsimgs_nonce' ),
 					'per_page' => 20,
 					'sources'  => array(
 						'unsplash' => 'Unsplash',

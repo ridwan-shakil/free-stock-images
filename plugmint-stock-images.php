@@ -44,9 +44,9 @@ spl_autoload_register(
 );
 
 // Prefer Composer autoload when available.
-$composer_autoload = __DIR__ . '/vendor/autoload.php';
-if ( file_exists( $composer_autoload ) ) {
-	require_once $composer_autoload;
+$fsimgs_composer_autoload = __DIR__ . '/vendor/autoload.php';
+if ( file_exists( $fsimgs_composer_autoload ) ) {
+	require_once $fsimgs_composer_autoload;
 }
 
 // Boot plugin.

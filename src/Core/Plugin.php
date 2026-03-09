@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * handled by AssetEnqueuer + assets/js/modal.js.
  */
 final class Plugin {
-	const VERSION          = '1.1.0';
+	const VERSION          = '1.0.0';
 	const NONCE_ACTION     = 'fsimgs_nonce';
 	const AJAX_SEARCH      = 'fsimgs_search';
 	const AJAX_IMPORT      = 'fsimgs_import';

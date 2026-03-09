@@ -1,15 +1,21 @@
 <?php
+/**
+ * Main plugin class responsible for initializing services and orchestrating plugin functionality.
+ *
+ * @package PlugmintStockImages
+ * @since 1.0.0
+ */
 
-namespace FreeStockImages\Core;
+namespace PlugmintStockImages\Core;
 
-use FreeStockImages\Admin\AssetEnqueuer;
-use FreeStockImages\Admin\MenuRegistrar;
-use FreeStockImages\Admin\MediaPage;
-use FreeStockImages\Admin\SettingsPage;
-use FreeStockImages\Ajax\AjaxController;
-use FreeStockImages\API\ProviderFactory;
-use FreeStockImages\API\SourcePolicy;
-use FreeStockImages\Services\Importer;
+use PlugmintStockImages\Admin\AssetEnqueuer;
+use PlugmintStockImages\Admin\MenuRegistrar;
+use PlugmintStockImages\Admin\MediaPage;
+use PlugmintStockImages\Admin\SettingsPage;
+use PlugmintStockImages\Ajax\AjaxController;
+use PlugmintStockImages\API\ProviderFactory;
+use PlugmintStockImages\API\SourcePolicy;
+use PlugmintStockImages\Services\Importer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -22,34 +28,44 @@ if ( ! defined( 'ABSPATH' ) ) {
  * handled by AssetEnqueuer + assets/js/modal.js.
  */
 final class Plugin {
-	const VERSION          = '1.1.0';
-	const NONCE_ACTION     = 'fsi_nonce';
-	const AJAX_SEARCH      = 'fsi_search';
-	const AJAX_IMPORT      = 'fsi_import';
+	const VERSION          = '1.0.0';
+	const NONCE_ACTION     = 'fsimgs_nonce';
+	const AJAX_SEARCH      = 'fsimgs_search';
+	const AJAX_IMPORT      = 'fsimgs_import';
 	const CAP_MANAGE       = 'manage_options';
 	const CAP_UPLOAD_FILES = 'upload_files';
 
 	/**
+	 * Singleton instance.
+	 *
 	 * @var Plugin|null
 	 */
 	private static $instance = null;
 
 	/**
+	 * Menu registrar service.
+	 *
 	 * @var MenuRegistrar|null
 	 */
 	private $menu_registrar;
 
 	/**
+	 * Asset enqueuer service.
+	 *
 	 * @var AssetEnqueuer|null
 	 */
 	private $asset_enqueuer;
 
 	/**
+	 * AJAX controller service.
+	 *
 	 * @var AjaxController|null
 	 */
 	private $ajax_controller;
 
 	/**
+	 * Get the singleton instance of the plugin.
+	 *
 	 * @return Plugin
 	 */
 	public static function get_instance() {
@@ -60,6 +76,9 @@ final class Plugin {
 		return self::$instance;
 	}
 
+	/**
+	 * Private constructor to enforce singleton pattern.
+	 */
 	private function __construct() {
 	}
 

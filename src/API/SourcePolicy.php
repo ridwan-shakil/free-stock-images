@@ -1,8 +1,14 @@
 <?php
+/**
+ * Encapsulates source enablement and source config for UI localization.
+ *
+ * @package PlugmintStockImages
+ * @since 1.0.0
+ */
 
-namespace FreeStockImages\API;
+namespace PlugmintStockImages\API;
 
-use FreeStockImages\Admin\SettingsPage;
+use PlugmintStockImages\Admin\SettingsPage;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -13,6 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SourcePolicy {
 	/**
+	 * Determines if a source is enabled based on the plugin settings. Unsplash requires an API key, while Pixabay and Pexels are always enabled.
+	 *
 	 * @param string $source Provider key.
 	 * @return bool
 	 */
@@ -29,6 +37,8 @@ class SourcePolicy {
 	}
 
 	/**
+	 * Gets the source configuration for all providers, including label and enablement status. This is used for UI localization and conditional display.
+	 *
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function get_source_config() {

@@ -1,13 +1,22 @@
 <?php
+/**
+ * Implements the Pexels API provider.
+ *
+ * @package PlugmintStockImages
+ * @since 1.0.0
+ */
 
-namespace FreeStockImages\API;
+namespace PlugmintStockImages\API;
 
-use FreeStockImages\Admin\SettingsPage;
+use PlugmintStockImages\Admin\SettingsPage;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Implements the Pexels API provider.
+ */
 class Pexels implements ProviderInterface {
 	/**
 	 * Pexels fallback demo key for mixed key policy.
@@ -17,22 +26,25 @@ class Pexels implements ProviderInterface {
 	private $demo_key = 'iyHCPNGUtD3m5G2mIQ6oSbg6p6FkZcMOTwKSbHvLQJfY7V2UIOdNV4Fd';
 
 	/**
+	 * Searches images on Pexels.
+	 *
 	 * @param string $query Search term.
 	 * @param array  $filters Optional filters.
 	 * @param int    $page Page number.
-	 * @param int    $perPage Results per page.
+	 * @param int    $per_page Results per page.
+	 * @throws \RuntimeException On API errors or invalid responses.
 	 * @return array
 	 */
-	public function search_images( string $query, array $filters = array(), int $page = 1, int $perPage = 20 ): array {
+	public function search_images( string $query, array $filters = array(), int $page = 1, int $per_page = 20 ): array {
 		$api_key = $this->get_api_key();
 		if ( '' === $api_key ) {
-			throw new \RuntimeException( __( 'Pexels API key is missing.', 'free-stock-images' ) );
+			throw new \RuntimeException( esc_html__( 'Pexels API key is missing.', 'plugmint-stock-images' ) );
 		}
 
 		$params = array(
 			'query'    => $query,
 			'page'     => max( 1, $page ),
-			'per_page' => min( 80, max( 1, $perPage ) ),
+			'per_page' => min( 80, max( 1, $per_page ) ),
 		);
 
 		if ( ! empty( $filters['orientation'] ) ) {
@@ -59,17 +71,17 @@ class Pexels implements ProviderInterface {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			throw new \RuntimeException( $response->get_error_message() );
+			throw new \RuntimeException( esc_html( $response->get_error_message() ) );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			throw new \RuntimeException( sprintf( 'Pexels API request failed (%d).', $status_code ) );
+			throw new \RuntimeException( esc_html( sprintf( 'Pexels API request failed (%d).', $status_code ) ) );
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $data ) ) {
-			throw new \RuntimeException( __( 'Invalid response from Pexels API.', 'free-stock-images' ) );
+			throw new \RuntimeException( esc_html__( 'Invalid response from Pexels API.', 'plugmint-stock-images' ) );
 		}
 
 		if ( empty( $data['photos'] ) || ! is_array( $data['photos'] ) ) {
@@ -101,6 +113,8 @@ class Pexels implements ProviderInterface {
 	}
 
 	/**
+	 * Gets the API key to use for requests. Respects the mixed key policy by returning the user key if set, or the demo key otherwise.
+	 *
 	 * @return string
 	 */
 	public function get_api_key(): string {

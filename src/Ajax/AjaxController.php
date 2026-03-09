@@ -1,10 +1,16 @@
 <?php
+/**
+ * Handles plugin admin-ajax endpoints.
+ *
+ * @package PlugmintStockImages
+ * @since 1.0.0
+ */
 
-namespace FreeStockImages\Ajax;
+namespace PlugmintStockImages\Ajax;
 
-use FreeStockImages\API\ProviderFactory;
-use FreeStockImages\API\SourcePolicy;
-use FreeStockImages\Services\Importer;
+use PlugmintStockImages\API\ProviderFactory;
+use PlugmintStockImages\API\SourcePolicy;
+use PlugmintStockImages\Services\Importer;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -15,41 +21,57 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class AjaxController {
 	/**
+	 * Nonce action.
+	 *
 	 * @var string
 	 */
 	private $nonce_action;
 
 	/**
+	 * Search action key.
+	 *
 	 * @var string
 	 */
 	private $search_action;
 
 	/**
+	 * Import action key.
+	 *
 	 * @var string
 	 */
 	private $import_action;
 
 	/**
+	 * Upload capability required to access the endpoints.
+	 *
 	 * @var string
 	 */
 	private $upload_cap;
 
 	/**
+	 * Provider factory.
+	 *
 	 * @var ProviderFactory
 	 */
 	private $provider_factory;
 
 	/**
+	 * Source policy.
+	 *
 	 * @var SourcePolicy
 	 */
 	private $source_policy;
 
 	/**
+	 * Importer service.
+	 *
 	 * @var Importer
 	 */
 	private $importer;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param string          $nonce_action Nonce action.
 	 * @param string          $search_action Search action key.
 	 * @param string          $import_action Import action key.
@@ -59,16 +81,18 @@ class AjaxController {
 	 * @param Importer        $importer Importer service.
 	 */
 	public function __construct( $nonce_action, $search_action, $import_action, $upload_cap, ProviderFactory $provider_factory, SourcePolicy $source_policy, Importer $importer ) {
-		$this->nonce_action    = $nonce_action;
-		$this->search_action   = $search_action;
-		$this->import_action   = $import_action;
-		$this->upload_cap      = $upload_cap;
+		$this->nonce_action     = $nonce_action;
+		$this->search_action    = $search_action;
+		$this->import_action    = $import_action;
+		$this->upload_cap       = $upload_cap;
 		$this->provider_factory = $provider_factory;
-		$this->source_policy   = $source_policy;
-		$this->importer        = $importer;
+		$this->source_policy    = $source_policy;
+		$this->importer         = $importer;
 	}
 
 	/**
+	 * Registers the AJAX handlers. Should be called from the plugin core during initialization.
+	 *
 	 * @return void
 	 */
 	public function register() {
@@ -77,6 +101,8 @@ class AjaxController {
 	}
 
 	/**
+	 * Handles the image search AJAX request.
+	 *
 	 * @return void
 	 */
 	public function search() {
@@ -86,7 +112,7 @@ class AjaxController {
 			wp_send_json_error(
 				array(
 					'error_code' => 'unauthorized',
-					'message'    => __( 'You are not allowed to search images.', 'free-stock-images' ),
+					'message'    => __( 'You are not allowed to search images.', 'plugmint-stock-images' ),
 					'images'     => array(),
 				),
 				403
@@ -122,7 +148,7 @@ class AjaxController {
 			wp_send_json_error(
 				array(
 					'error_code' => 'source_disabled',
-					'message'    => __( 'This source is disabled until a valid API key is configured.', 'free-stock-images' ),
+					'message'    => __( 'This source is disabled until a valid API key is configured.', 'plugmint-stock-images' ),
 					'images'     => array(),
 				),
 				400
@@ -134,7 +160,7 @@ class AjaxController {
 			wp_send_json_error(
 				array(
 					'error_code' => 'invalid_source',
-					'message'    => __( 'Invalid image source selected.', 'free-stock-images' ),
+					'message'    => __( 'Invalid image source selected.', 'plugmint-stock-images' ),
 					'images'     => array(),
 				),
 				400
@@ -166,6 +192,8 @@ class AjaxController {
 	}
 
 	/**
+	 * Imports an image from a given URL into the Media Library.
+	 *
 	 * @return void
 	 */
 	public function import() {
@@ -175,7 +203,7 @@ class AjaxController {
 			wp_send_json_error(
 				array(
 					'error_code' => 'unauthorized',
-					'message'    => __( 'You are not allowed to import images.', 'free-stock-images' ),
+					'message'    => __( 'You are not allowed to import images.', 'plugmint-stock-images' ),
 				),
 				403
 			);
@@ -191,7 +219,7 @@ class AjaxController {
 			wp_send_json_error(
 				array(
 					'error_code' => 'missing_image_url',
-					'message'    => __( 'Image URL is required.', 'free-stock-images' ),
+					'message'    => __( 'Image URL is required.', 'plugmint-stock-images' ),
 				),
 				400
 			);
